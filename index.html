@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交互式示例</title>
+    <script src="//mozilla.github.io/pdf.js/build/pdf.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            /* font-size: 0; */
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        // If absolute URL from the remote server is provided, configure the CORS
+        // header on that server.
+        var url = 'https://www.hfi.hsbc.com.hk/data/hk/invest/unit/ut_fs_u63036_en.pdf';
+
+        // Loaded via <script> tag, create shortcut to access PDF.js exports.
+        var pdfjsLib = window['pdfjs-dist/build/pdf'];
+
+        // The workerSrc property shall be specified.
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '//mozilla.github.io/pdf.js/build/pdf.worker.js';
+        pdfjsLib.disableWorker = true;
+
+        // Asynchronous download of PDF
+        var loadingTask = pdfjsLib.getDocument(url);
+        var pageNumber = 1;
+        var maxPageNumber = 0;
+        var pdf = null;
+
+        const renderPageByNumber = () => {
+            // Fetch the first page
+            if (pageNumber <= maxPageNumber) {
+                // js 动态插入 canvas 对象
+                var canvas = document.createElement('canvas');
+                canvas.id = 'the-canvas' + pageNumber;
+                canvas.style = 'border: 1px solid black; direction: ltr;with:100%';
+                document.body.appendChild(canvas);
+
+
+                pdfGloble.getPage(pageNumber).then(function (page) {
+                    console.log('Page loaded:', page);
+
+                    // var scale = window.innerWidth / page.view[2];
+                    var viewport = page.getViewport({
+                        scale: 1
+                    });
+
+                    // Prepare canvas using PDF page dimensions
+                    var canvas = document.getElementById('the-canvas' + pageNumber);
+                    var context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    // Render PDF page into canvas context
+                    var renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                    };
+                    var renderTask = page.render(renderContext);
+                    renderTask.promise.then(function () {
+                        console.log('Page rendered:', pageNumber, 'of', maxPageNumber);
+                        pageNumber++;
+                        renderPageByNumber();
+                    });
+                });
+
+            } else {
+                console.log('Page not found');
+            }
+        }
+
+
+
+        function renderPage() {
+            loadingTask.promise.then(function (pdf) {
+                console.log('PDF loaded');
+                maxPageNumber = pdf.numPages;
+                pdfGloble = pdf;
+                renderPageByNumber();
+
+            }, function (reason) {
+                // PDF loading error
+                console.error(reason);
+            });
+        }
+
+
+        loadingTask.promise.then(function (pdf) {
+            renderPage();
+        }, function (reason) {
+            // PDF loading error
+            console.error(reason);
+        });
+    </script>
+</body>
+
+</html>
