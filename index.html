@@ -18,19 +18,27 @@
 
 <body>
     <script>
-        // If absolute URL from the remote server is provided, configure the CORS
-        // header on that server.
-        var url = 'https://www.hfi.hsbc.com.hk/data/hk/invest/unit/ut_fs_u63036_en.pdf';
+        //  js 从 url 参数中获取 pdf 文件的绝对路径
+        const urlParamsObj = {};
+        const searchParams = new URLSearchParams(window.location.search);
+        searchParams.forEach((value, key) => {
+            urlParamsObj[key] = value;
+        });
+        const {
+            pdfUrl,
+            padfName
+        } = urlParamsObj;
 
-        // Loaded via <script> tag, create shortcut to access PDF.js exports.
+        // js 动态写入网页的 title  
+        document.title = padfName;
+
         var pdfjsLib = window['pdfjs-dist/build/pdf'];
-
         // The workerSrc property shall be specified.
         pdfjsLib.GlobalWorkerOptions.workerSrc = '//mozilla.github.io/pdf.js/build/pdf.worker.js';
         pdfjsLib.disableWorker = true;
 
         // Asynchronous download of PDF
-        var loadingTask = pdfjsLib.getDocument(url);
+        var loadingTask = pdfjsLib.getDocument(pdfUrl);
         var pageNumber = 1;
         var maxPageNumber = 0;
         var pdf = null;
