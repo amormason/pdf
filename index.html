@@ -5,13 +5,17 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>交互式示例</title>
+    <title>PDF File</title>
     <script src="//mozilla.github.io/pdf.js/build/pdf.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             /* font-size: 0; */
+        }
+
+        canvas {
+            width: 100%;
         }
     </style>
 </head>
@@ -25,8 +29,8 @@
             urlParamsObj[key] = value;
         });
         const {
-            pdfUrl,
-            padfName
+            pdfUrl = 'https://www.hfi.hsbc.com.hk/data/hk/invest/unit/ut_pr_merrl001_tw.pdf',
+            padfName = 'PDF File'
         } = urlParamsObj;
 
         // js 动态写入网页的 title  
@@ -36,6 +40,8 @@
         // The workerSrc property shall be specified.
         pdfjsLib.GlobalWorkerOptions.workerSrc = '//mozilla.github.io/pdf.js/build/pdf.worker.js';
         pdfjsLib.disableWorker = true;
+        pdfjsLib.disableAutoFetch = true;
+        pdfjsLib.disableStream = true;
 
         // Asynchronous download of PDF
         var loadingTask = pdfjsLib.getDocument(pdfUrl);
@@ -48,8 +54,9 @@
             if (pageNumber <= maxPageNumber) {
                 // js 动态插入 canvas 对象
                 var canvas = document.createElement('canvas');
-                canvas.id = 'the-canvas' + pageNumber;
-                canvas.style = 'border: 1px solid black; direction: ltr;with:100%';
+                const canvasID = `pdf-canvas-${pageNumber}`;
+                canvas.id = canvasID;
+                // canvas.style = 'border: 1px solid black; direction: ltr;with:100%';0
                 document.body.appendChild(canvas);
 
 
@@ -58,11 +65,11 @@
 
                     // var scale = window.innerWidth / page.view[2];
                     var viewport = page.getViewport({
-                        scale: 1
+                        scale: 5
                     });
 
                     // Prepare canvas using PDF page dimensions
-                    var canvas = document.getElementById('the-canvas' + pageNumber);
+                    var canvas = document.getElementById(canvasID);
                     var context = canvas.getContext('2d');
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
