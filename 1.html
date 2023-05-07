@@ -30,11 +30,13 @@
             border-top: 1px solid gray;
         }
     </style>
+
 </head>
 
 <body>
 
-    <script src="//mozilla.github.io/pdf.js/build/pdf.js"></script>
+    <script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
+
 
 
     <div class="container">
@@ -66,8 +68,6 @@
 
         // Loaded via <script> tag, create shortcut to access PDF.js exports.
         const pdfjsLib = window['pdfjs-dist/build/pdf'];
-        pdfjsLib.cMapUrl = "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.2.228/cmaps/";
-        pdfjsLib.cMapPacked = true;
         // The workerSrc property shall be specified.
         pdfjsLib.GlobalWorkerOptions.workerSrc = '//mozilla.github.io/pdf.js/build/pdf.worker.js';
 
@@ -166,7 +166,11 @@
         /**
          * Asynchronously downloads PDF.
          */
-        pdfjsLib.getDocument(pdfUrl).promise.then(function (pdfDoc_) {
+        pdfjsLib.getDocument({
+            url: pdfUrl,
+            cMapPacked: true,
+            cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.5.141/cmaps/'
+        }).promise.then(function (pdfDoc_) {
             pdfDoc = pdfDoc_;
             document.getElementById('page_count').textContent = pdfDoc.numPages;
 
