@@ -41,6 +41,7 @@
         <p>
             (Swipe left and right to turn the page)
         </p>
+        <button id="back">go back</button>
         <button id="prev" disabled>Previous</button>
         <button id="next">Next</button>
         &nbsp; &nbsp;
@@ -131,6 +132,11 @@
                 }
             }
         }
+
+        document.getElementById('back').addEventListener('click', () => {
+            // js返回上一页
+            window.history.back();
+        });
 
         /**
          * Displays previous page.
