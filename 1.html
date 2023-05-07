@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            /* font-size: 0; */
+        }
+
+        .container {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .container button {
+            margin-top: 1rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        canvas {
+            width: 100%;
+            border-bottom: 1px solid gray;
+            border-top: 1px solid gray;
+        }
+    </style>
+</head>
+
+<body>
+
+    <script src="//mozilla.github.io/pdf.js/build/pdf.js"></script>
+
+
+    <div class="container">
+        <p>
+            (Swipe left and right to turn the page)
+        </p>
+        <button id="prev" disabled>Previous</button>
+        <button id="next">Next</button>
+        &nbsp; &nbsp;
+        <span>PDF Index: <span id="page_num"></span> / <span id="page_count"></span></span>
+    </div>
+
+    <canvas id="the-canvas"></canvas>
+
+    <script>
+        const urlParamsObj = {};
+        const searchParams = new URLSearchParams(window.location.search);
+        searchParams.forEach((value, key) => {
+            urlParamsObj[key] = value;
+        });
+        const {
+            pdfUrl,
+            padfName
+        } = urlParamsObj;
+
+        // js 动态写入网页的 title  
+        padfName && (document.title = padfName);
+
+        // Loaded via <script> tag, create shortcut to access PDF.js exports.
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+
+        // The workerSrc property shall be specified.
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '//mozilla.github.io/pdf.js/build/pdf.worker.js';
+
+        var pdfDoc = null,
+            pageNum = 1,
+            pageRendering = false,
+            pageNumPending = null,
+            scale = 10,
+            canvas = document.getElementById('the-canvas'),
+            ctx = canvas.getContext('2d');
+
+        /**
+         * Get page info from document, resize canvas accordingly, and render page.
+         * @param num Page number.
+         */
+        function renderPage(num) {
+            pageRendering = true;
+            // Using promise to fetch the page
+            pdfDoc.getPage(num).then(function (page) {
+                var viewport = page.getViewport({ scale: scale });
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                // Render PDF page into canvas context
+                var renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                var renderTask = page.render(renderContext);
+
+                // Wait for rendering to finish
+                renderTask.promise.then(function () {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        // New page rendering is pending
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+            });
+
+            // Update page counters
+            document.getElementById('page_num').textContent = num;
+        }
+
+        /**
+         * If another page rendering in progress, waits until the rendering is
+         * finised. Otherwise, executes rendering immediately.
+         */
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+                if (pageNum < 2) {
+                    document.getElementById('prev').disabled = true;
+                }
+                if (pageNum > 1) {
+                    document.getElementById('prev').disabled = false;
+                }
+                if (pageNum >= pdfDoc.numPages) {
+                    document.getElementById('next').disabled = true;
+                }
+            }
+        }
+
+        /**
+         * Displays previous page.
+         */
+        function onPrevPage() {
+            if (pageNum <= 1) {
+                return;
+            }
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+        document.getElementById('prev').addEventListener('click', onPrevPage);
+
+        /**
+         * Displays next page.
+         */
+        function onNextPage() {
+            if (pageNum >= pdfDoc.numPages) {
+                return;
+            }
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+        document.getElementById('next').addEventListener('click', onNextPage);
+
+        /**
+         * Asynchronously downloads PDF.
+         */
+        pdfjsLib.getDocument(pdfUrl).promise.then(function (pdfDoc_) {
+            pdfDoc = pdfDoc_;
+            document.getElementById('page_count').textContent = pdfDoc.numPages;
+
+            // Initial/first page rendering
+            renderPage(pageNum);
+        }, function (reason) {
+            // PDF loading error
+            console.error(reason);
+            // js 在 div 中写入 html
+            document.body.innerHTML = `
+                <div style="text-align: center; padding: 1rem;">
+                    <h1>${reason.name}</h1>
+                    <p>${reason.message}</p>
+                </div>
+            `
+        });
+
+        // js 监听页面左右滑动  
+        let startX = 0;
+
+        let endX = 0;
+        document.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].pageX;
+        })
+        document.addEventListener('touchend', (e) => {
+            endX = e.changedTouches[0].pageX;
+            if (startX - endX > 20) {
+                onNextPage();
+            } else if (endX - startX > 20) {
+                onPrevPage();
+            }
+        })
+
+
+
+
+    </script>
+</body>
+
+</html>
